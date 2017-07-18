@@ -1,0 +1,249 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Rune Type</title>
+		<script
+		  src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+		  integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g="
+		  crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
+		<script src="http://backbonejs.org/backbone-min.js"></script>
+		<style>
+			html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td,article,aside,canvas,details,embed,figure,figcaption,footer,header,hgroup,menu,nav,output,ruby,section,summary,time,mark,audio,video{border:0;font-size:100%;font:inherit;vertical-align:baseline;margin:0;padding:0}article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section{display:block}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:none}table{border-collapse:collapse;border-spacing:0}
+			/*********************************************************/
+
+			* {
+				box-sizing: border-box;
+			}
+
+			body {
+				background:#e3e3e3;
+			}
+
+			body > main {
+				width:300px;
+				margin:20px auto;
+
+				background: white;
+				border:1px solid #666;
+			}
+
+			.field label,
+			.field textarea {
+				display:block;
+				width:auto;
+			}
+
+			.field label {
+				background: black;
+				color:white;
+				padding:10px 6px;
+			}
+
+			.field textarea {
+				height:100px;
+				width:100%;
+				padding:6px;
+				border:none;
+			}
+
+		</style>
+	</head>
+	<body>
+		<head></head>
+		<main>
+			<div class="field text-container input">
+				<label for="rune-type-input">Input</label>
+				<textarea class="input" placeholder="type here..." name="rune-type-input" id="rune-type-input"></textarea>
+			</div>
+			<div class="field text-container output">
+				<label for="rune-type-output">Output</label>
+				<textarea class="input" name="rune-type-output" id="rune-type-output"></textarea>
+			</div>
+		</main>
+		<footer></footer>
+		<script>
+			(function() {
+
+				var RuneTypeMachine = {
+
+					/**
+					 * Firestart a RuneTypeMachine component
+					 */
+					_c: function(set, parameters) {
+
+						var arg = {},
+							model,
+							view;
+
+						if (!set.view) {
+							return false;
+						}
+
+						if (set.model
+							&& set.model != null
+							&& typeof set.model === 'function') {
+
+							model = new set.model(parameters);
+
+							arg.model = model;
+						}
+
+						view = new set.view(arg);
+
+						return model;
+					},
+
+					/**
+					 * Components
+					 */
+					components: {
+
+						/**
+						 * Main component
+						 *
+						 * @type {Object}
+						 */
+						main: {
+
+							////////////////////////////////
+							model: Backbone.Model.extend({
+
+								defaults: {
+
+									input: '',
+
+									output: ''
+								},
+
+								initialize: function() {
+
+									this.fields = new Backbone.Collection();
+									this.on('change:input', this.copyValue.bind(this));
+								},
+
+								copyValue: function() {
+
+									this.set('output', this.translate(this.get('input')));
+								},
+
+								translate: function(string) {
+
+									return string;
+								}
+							}),
+
+							////////////////////////////////
+							view: Backbone.View.extend({
+
+								el: 'body',
+
+								initialize: function() {
+
+									this.initFields();
+								},
+
+								initFields: function() {
+
+									this.model.fields.add(this.initField('input'));
+									this.model.fields.add(this.initField('output'));
+								},
+
+								initField: function(name, $element) {
+
+									var parameters = {
+											name: name,
+											element: this.$el.find('.field.' + name),
+											parent: this.model
+										};
+
+									return RuneTypeMachine._c(
+										RuneTypeMachine.components.field,
+										parameters
+									);
+								},
+
+								debugInfo: function() {
+
+									$('#test').html('input: ' + this.model.get('input') + ', '
+														+ ' output:' + this.model.get('output'));
+								}
+							})
+						},
+
+						/**
+						 * Field Component
+						 *
+						 * @type {Object}
+						 */
+						field: {
+
+							////////////////////////////////
+							model: Backbone.Model.extend({
+
+								initialize: function() {
+
+									this.bindEvents();
+								},
+
+								bindEvents: function() {
+
+									this.setParentValueSync();
+								},
+
+								setParentValueSync: function() {
+
+									var parent = this.get('parent');
+
+									parent.on('change:' + this.get('name'), function() {
+
+										this.set('value', parent.get(this.get('name')));
+									}.bind(this));
+
+									this.on('change:value', function() {
+
+										parent.set(this.get('name'), this.get('value'));
+									});
+								}
+							}),
+
+							////////////////////////////////
+							view: Backbone.View.extend({
+
+								initialize: function() {
+
+									this.setElement(this.model.get('element'));
+
+									this.$input = this.$el.find('.input');
+
+									this.bindEvents();
+								},
+
+								bindEvents: function() {
+
+									this.model.on('change:value', this.setValue.bind(this));
+									this.$input.on('change keyup paste', this.storeValue.bind(this));
+								},
+
+								setValue: function() {
+
+									this.$input.val(this.model.get('value'));
+								},
+
+								storeValue: function() {
+
+									this.model.set('value', this.$input.val());
+								}
+							})
+						}
+					}
+				}
+
+				/**
+				 * Run the application
+				 */
+				$(new RuneTypeMachine._c(RuneTypeMachine.components.main));
+			})();
+		</script>
+	</body>
+</html>
