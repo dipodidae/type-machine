@@ -52,6 +52,7 @@
 	<body>
 		<head></head>
 		<main>
+			<div id='test'></div>
 			<div class="field text-container input">
 				<label for="rune-type-input">Input</label>
 				<textarea class="input" placeholder="type here..." name="rune-type-input" id="rune-type-input"></textarea>
@@ -111,6 +112,8 @@
 
 								defaults: {
 
+									alphabetizedRunes: "ᚨᛒᚳᛞᛖᚠᚷᚺᛁᛃᚲᛚᛗᚾᛟᛈᚦᚱᛋᛏᚢᚹᛉᛉᚣᛉ",
+
 									input: '',
 
 									output: ''
@@ -129,7 +132,11 @@
 
 								translate: function(string) {
 
-									return string;
+									 return string.replace(/[a-z]/g,function f(a) {
+
+									 	return this.get('alphabetizedRunes')[parseInt(a, 36)-10]
+									 				|| a.replace(/[a-z]/gi,f)
+									 }.bind(this));
 								}
 							}),
 
@@ -141,6 +148,8 @@
 								initialize: function() {
 
 									this.initFields();
+
+									this.model.on('change:input change:output', this.debugInfo.bind(this));
 								},
 
 								initFields: function() {
